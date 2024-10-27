@@ -2,20 +2,23 @@
   include_vars:
     file: "{{ playbook_dir }}/roles/common/vars/main.yml"
     
-- name: "Update Apt Cache"
+- name: Update apt cache and upgrade all packages
   apt: 
     update_cache: yes
-  tags: installation
+    upgrade: dist
+  tags: installation, upgrade
 
-- name: "Install Common packages"
+- name: Install common packages
   apt:
     name: "{{ item }}"
     state: latest
-  with_items:
+  loop:
     - vim
     - curl
     - zsh
     - git
+    - bat
+    - btop
     - apt-transport-https
     - ca-certificates
     - ntfs-3g
@@ -25,57 +28,80 @@
     - python3-venv
   tags: installation, packages
 
-- name: Get Docker key
-  shell: curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+# ctop
+- name: Install docker-ctop
+  get_url:
+    url: https://github.com/bcicen/ctop/releases/download/v0.7.7/ctop-0.7.7-linux-amd64
+    dest: /usr/local/bin/ctop
+    mode: '0755'
+  tags: installation, packages, ctop
+
+# Docker
+- name: Install Docker
+  become: true
+  block:
+    - name: Create directory for Docker GPG key
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+        
+    - name: Download Docker's GPG key
+      get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
+
+    - name: Add Docker's apt repository
+      ansible.builtin.shell: |
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+      args:
+        executable: /bin/bash
+
+    - name: Update apt package index again (with Docker repo)
+      apt:
+        update_cache: yes
+
+    
+
   tags: docker
 
-- name: Add Docker key
-  command: sudo apt-key fingerprint 0EBFCD88
-  tags: docker
-
-- name: Add Docker repository to docker.list
-  shell: |
-    echo "deb [arch=$(dpkg --print-architecture)] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | 
-    sudo tee /etc/apt/sources.list.d/docker.list
-  tags: docker
-
-- name: Install docker-ce and docker-compose
-  shell: sudo apt-get update && sudo apt-get install -y --no-install-recommends docker-ce docker-compose
-  tags: docker
-
-- name: Add my user to Docker
-  command: "sudo usermod -a -G docker {{ USER }}"
-  tags: docker
-  
-# Argon
-- name: Install Argon fan script
-  shell: curl https://download.argon40.com/argon1.sh | bash
-  tags: argon
+- name: Install Docker and related packages
+  apt:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    - docker-buildx-plugin
+    - docker-compose-plugin
+  tags: dockertest
 
 # ZSH
-- name: Install Oh My Zsh
-  become_user: "{{ USER }}"
-  git:
-    repo: https://github.com/ohmyzsh/ohmyzsh.git
-    dest: ~/.oh-my-zsh
-    clone: yes
-  tags: packages, zsh
+- name: Install Oh My Zsh and setup
+  block:
+    - name: Install Oh My Zsh
+      become_user: "{{ USER }}"
+      git:
+        repo: https://github.com/ohmyzsh/ohmyzsh.git
+        dest: ~/.oh-my-zsh
+        clone: yes
 
-- name: Generate zshrc file and copy it
-  become_user: "{{ USER }}"
-  template:
-    src: zshrc
-    dest: "~/.zshrc"
-  tags: packages, zsh
+    - name: Generate zshrc file and copy it
+      become_user: "{{ USER }}"
+      template:
+        src: zshrc
+        dest: "~/.zshrc"
 
-- name: Install Powerlevel10k theme
-  become_user: "{{ USER }}"
-  git:
-    repo: https://github.com/romkatv/powerlevel10k.git
-    dest: ~/.oh-my-zsh/custom/themes/powerlevel10k
-  tags: packages, zsh
+    - name: Install Powerlevel10k theme
+      become_user: "{{ USER }}"
+      git:
+        repo: https://github.com/romkatv/powerlevel10k.git
+        dest: ~/.oh-my-zsh/custom/themes/powerlevel10k
 
-- name: Set Zsh as default shell
-  become: true
-  shell: chsh -s "$(which zsh)" {{ USER }}
-  tags: packages, zsh
+    - name: Set Zsh as default shell
+      become: true
+      shell: chsh -s "$(which zsh)" {{ USER }}
+
+  tags: zsh

@@ -1,6 +1,14 @@
 ---
-# tasks file for roles/common
+# Common
+
+# Proxmox server
+
+# Ubuntu server
 - import_tasks: install_tools.yml
-- import_tasks: disks.yml
-- import_tasks: docker.yml
+  when: inventory_hostname == 'ubuntu'
 - import_tasks: environment.yml
+  when: inventory_hostname == 'ubuntu'
+- import_tasks: disks.yml
+  when: inventory_hostname == 'ubuntu'
+- import_tasks: docker.yml
+  when: inventory_hostname == 'ubuntu'
