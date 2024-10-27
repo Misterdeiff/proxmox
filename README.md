@@ -1,46 +1,49 @@
 # Overview
-This repository contains a variety of docker containers, with the majority of them oriented to have your own media server using ARR solutions. It has been built using Ansible to create every single requirement. So, in case your system goes totally down, you will only need to apply the playbook and restore your docker config. Ideally you make a regular backup with Kopia in a different drive.
+This repository is a continuation of [rpi-home-lab ](https://github.com/Misterdeiff/rpi-home-lab), my original setup running on a `Raspberry Pi OS Lite 64-bit`. I decided to migrate everthing to a [Beelink SEi12](https://www.bee-link.com/products/beelink-sei12-i5-12450h) MiniPC because the Raspberry gave me buffering problems while watching 4K movies on Plex. In addition, the Intel Graphic card helps with transcoding, which wasn't possible with the Raspberry.
+
+This repository contains a variety of docker containers, with the majority of them oriented to have your own media solution using ARR servers, but also adding cool containers such as Pi-hole for DNS, Tailscale for remote private access, or Watchtower for automatic Docker updates. 
+
+It has been built using Ansible to create every single requirement. So, in case your system goes totally down and you don't have a snapshot of your VM, you will only need to apply the playbook and restore your docker config. Ideally, you make a regular snapshots of the VM or create backups with Kopia in a different drive. It's also very helpful for those who just want the infrastructure to be finished quickly and just invest the time in the container configurations.
 
 I included some interesting container notes to take into account when configuring them.
 
 
 # My setup
-I have started this project using a Raspberry Pi 4 with 8GB RAM, that is the reason why the documentation and some files refers to it, but this project and be used in any other linux system. In addition, I also use an Argon case that includes a fan, if you don't have this case you can simply omit/remove the `argon` tasks.
-
-I also use two HDDs: The primary one stores all the media and docker config, the second one is only for backups (a partition for Timemachine and another partition for Kopia backups).
+Hardware: [Beelink SEi12](https://www.bee-link.com/products/beelink-sei12-i5-12450h) (check the specs in the link). 
+Virtualization software and VMs:
+Proxmox VE
+- Ubuntu 24.04 LTS - Running Docker
 
 # Requirements
+Before starting the `Setup procedure` you will need the next:
+
+1. Server or PC to run Proxmox
+2. External HDDs to use for media and backup
+3. Telegram account - Notification system
+4. Tailscale account - Remote connection
+
+# Setup procedure
 1. Install Ansible in your laptop
    ```shell
    brew install ansible
    ```
-2. Load OS
-   - 2.1. Use Raspberry Pi Imager and select `Raspberry Pi OS Lite 64-bit` in the SD of the Raspberry Pi
-   - 2.2. Add your SSH key
-   - 2.3. Don't configure WiFi
-3. Connect your drive/s to Linux, run `lsblk -f` and find out their UUIDs
-4. Modify variables inside `roles/common/vars/main.yml`
-5. Adjust `inventories/hosts` as needed.
-6. Connect all drives included on step #4 to your Pi
-7. Create your own Telegram Bot for notifications from ARR apps, Watchtower and disk space
-8. Follow the steps under Tailscale container to get the `TAILSCALE_AUTHKEY`
-9. Run all tasks in the playbook:
+2. Install Proxmox VE in your server
+   - 2.1. Filesystem: For my use case I chose `ext4` since I only have a primary SSD, but you should choose what fits better for you.
+3. Create a VM for Ubuntu
+   3.1. Download the latest Ubuntu ISO and add it to Proxmox ISO images storage.
+   3.2. Create the VM with the config that works best for you.
+4. Connect your drive/s to the hardware running Proxmox
+5. In Proxmox UI, go to the Ubuntu VM > Hardware > Add > USB Device and add your drives. This will passthrough your drives directly to the VM.
+6. (Optional) Add your public SSH key to Ubuntu and Proxmox.
+7. SSH to the Ubuntu VM and run `lsblk -f` to confirm they are available and to find out the HDDs' UUIDs.
+8. Create your own Telegram Bot for notifications from ARR apps, Watchtower and disk space.
+9. Follow the steps under Tailscale container to get the `TAILSCALE_AUTHKEY`.
+10. Modify variables inside `roles/common/vars/main.yml`.
+11. Adjust `inventories/hosts` as needed.
+12. Run all tasks in the playbook:
    ```shell
    ansible-playbook -i inventories/hosts -K playbook.yml
    ```
-
-## Telegram
-In order to create your own bot follow the next steps:
-1. Create a Telegram bot with `@BotFather` (the verified one)
-2. Paste your bot's token in the main.yml file and use it to create connections in the ARR apps (Overseerr, Radarr, Sonarr, Prowlarr)
-3. Use `@get_id_bot` to find your bot's Channel ID. Use it to receive the notifications in that channel for the ARR apps and Watchtower (main.yml)
-4. (Optional) Create a Telegram Channel to separate system notifications (Overseer approvals and container updates received in the bot directly) from the new Movies / TV Shows added (Telegram Channel for family and friends).
-   4.1. Create your new channel
-   4.2. Add your bot as Admin
-   4.3. Use Telegram web and access your new Channel. Get the Channel ID from the URL. It usually starts with `-100`
-   4.4. Use this Channel ID in the Connection configured in Radarr and Sonarr
-
-Note: `telegram_notification_disk.sh` uses an optional variable `EXCLUDE_DISK` to exclude from the notifications the Time Machine disk. This is because Time Machine tends to use the whole disk space before removing old backups.
 
 # Useful commands
 
@@ -70,28 +73,19 @@ ansible-playbook -i inventories/hosts -K playbook.yml -t docker
 ```shell
 ansible-playbook -i inventories/hosts -K playbook.yml -t container -e "container=samba"
 ```
-
-
 # Tools
-## Argon Case
-More info: https://wagnerstechtalk.com/argonone/
-### Argon Case button behaviour
-BUTTON STATE	ACTION	                FUNCTION
-OFF	        Short Press	        Turn ON
-ON	        Long Press (>= 3s)	Soft Shutdown and Power Cut
-ON	        Short press (<3s)	Nothing
-ON	        Double tap	        Reboot
-ON	        Long Press (>= 5s)	Forced Shutdown
+## Telegram
+In order to create your own bot follow the next steps:
+1. Create a Telegram bot with `@BotFather` (the verified one)
+2. Paste your bot's token in the main.yml file and use it to create connections in the ARR apps (Overseerr, Radarr, Sonarr, Prowlarr)
+3. Use `@get_id_bot` to find your bot's Channel ID. Use it to receive the notifications in that channel for the ARR apps and Watchtower (main.yml)
+4. (Optional) Create a Telegram Channel to separate system notifications (Overseer approvals and container updates received in the bot directly) from the new Movies / TV Shows added (Telegram Channel for family and friends).
+   4.1. Create your new channel
+   4.2. Add your bot as Admin
+   4.3. Use Telegram web and access your new Channel. Get the Channel ID from the URL. It usually starts with `-100`
+   4.4. Use this Channel ID in the Connection configured in Radarr and Sonarr
 
-### Argon ONE V2 fan script
-By default this is the behaviour after installing the script:
-
-CPU TEMP     FAN POWER
-55’C	        10%
-60’C	        55%
-65’C	        100%
-
-You can config different settings by using `argonone-config`. To uninstall: `argonone-uninstall`.
+Note: `telegram_notification_disk.sh` uses an optional variable `EXCLUDE_DISK` to exclude from the notifications the Time Machine disk. This is because Time Machine tends to use the whole disk space before removing old backups.
 
 # Container Notes
 ## Plex

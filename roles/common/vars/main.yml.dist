@@ -37,13 +37,15 @@ TELEGRAM:
 # Containers
 CONTAINER_USER: user
 
+PLEX_CLAIM: claim-YourTokenHere #https://www.plex.tv/claim/
+
 SAMBA:
   - USER: USER1
     PASS: 123456
   - USER: USER2
     PASS: 123456
 
-WATCHTOWER_CRON: 0 0 4 1 * * # First day of the month
+WATCHTOWER_CRON: 0 0 4 1 * * # First day of the month at 4AM
 
 PIHOLE_WEB_PASS: PiholePass
 

@@ -38,7 +38,8 @@ services:
       - PUID={{ PUID }}
       - PGID={{ PGID }}
       - VERSION=docker
-      - TZ={{ TIMEZONE }}
+      - TZ={{ TIMEZONE }} 
+      - PLEX_CLAIM={{ PLEX_CLAIM }}
     volumes:
       - "{{ STORAGE }}/docker/Plex Media Server:/root/Library/Application Support/Plex Media Server"
       - "{{ STORAGE }}/shared/media:/shared/media"
@@ -213,7 +214,6 @@ services:
       - TZ={{ TIMEZONE }}
       - USER={{ CONTAINER_USER }}
       - KOPIA_PASSWORD={{ KOPIA_REPO_PASS }}
-      - KOPIA_PERSIST_CREDENTIALS_ON_CONNECT="true"
     volumes:
       - "{{ STORAGE }}/docker/kopia/config:/app/config"
       - "{{ STORAGE }}/docker/kopia/cache:/app/cache"
