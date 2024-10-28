@@ -137,3 +137,8 @@ VPN access to your home network
 4. Add the token to the main.yml environment variable list
 5. Once the tailscale container is up, access the [Tailscale dashboard > Machines](https://login.tailscale.com/admin/machines) > Options (in Tailscale machine) > Edit route settings > Check the shared subnet > Save
 6. DNS > Nameservers > Add nameserver > Enter the internal IP of your server (Pi-hole should be running)
+
+# Features
+These are additional features that you can find in the `environment.yml` file.
+- Custom aliases
+- Run tasks without entering the `BECOME` password

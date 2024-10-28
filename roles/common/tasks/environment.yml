@@ -4,6 +4,24 @@
     dest="{{ USER_PATH }}/.bash_aliases"
   tags: environment, aliases
 
+- name: Ensure user has passwordless sudo
+  lineinfile:
+    path: /etc/sudoers
+    state: present
+    regexp: '^{{ USER }} ALL=\(ALL\) NOPASSWD: ALL'
+    line: '{{ USER }} ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+  vars:
+    ansible_become: true
+  tags: sudoers
+
+- name: Create user directory structure
+  file:
+    path: "{{ USER_PATH }}/{{ item }}"
+    state: directory
+  loop: "{{ USER_DIRECTORY_STRUCTURE }}"
+  tags: directory
+
 - name: Generate telegram_notification_disk.sh file and copy it
   template:
     src: telegram_notification_disk.sh

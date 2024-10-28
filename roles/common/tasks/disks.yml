@@ -34,10 +34,3 @@
     state: directory
   loop: "{{ MEDIA_DIRECTORY_STRUCTURE }}"
   tags: directory
-
-- name: Create user directory structure
-  file:
-    path: "{{ USER_PATH }}/{{ item }}"
-    state: directory
-  loop: "{{ USER_DIRECTORY_STRUCTURE }}"
-  tags: directory
