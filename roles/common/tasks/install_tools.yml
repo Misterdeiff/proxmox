@@ -6,7 +6,7 @@
   apt: 
     update_cache: yes
     upgrade: dist
-  tags: installation, upgrade
+  tags: installation, upgrade, packages
 
 - name: Install common packages
   apt:
@@ -22,6 +22,7 @@
     - apt-transport-https
     - ca-certificates
     - ntfs-3g
+    - nfs-common
     - gnupg2
     - fail2ban
     - software-properties-common
@@ -34,7 +35,7 @@
     url: https://github.com/bcicen/ctop/releases/download/v0.7.7/ctop-0.7.7-linux-amd64
     dest: /usr/local/bin/ctop
     mode: '0755'
-  tags: installation, packages, ctop
+  tags: installation, ctop
 
 # Docker
 - name: Install Docker
@@ -93,12 +94,6 @@
       template:
         src: zshrc
         dest: "~/.zshrc"
-
-    - name: Install Powerlevel10k theme
-      become_user: "{{ USER }}"
-      git:
-        repo: https://github.com/romkatv/powerlevel10k.git
-        dest: ~/.oh-my-zsh/custom/themes/powerlevel10k
 
     - name: Set Zsh as default shell
       become: true
