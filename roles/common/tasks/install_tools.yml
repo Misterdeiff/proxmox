@@ -62,9 +62,6 @@
     - name: Update apt package index again (with Docker repo)
       apt:
         update_cache: yes
-
-    
-
   tags: docker
 
 - name: Install Docker and related packages
@@ -88,6 +85,21 @@
         repo: https://github.com/ohmyzsh/ohmyzsh.git
         dest: ~/.oh-my-zsh
         clone: yes
+
+    - name: Create directory for Powerlevel10k
+      file:
+        path: $HOME/.oh-my-zsh/custom/themes/powerlevel10k
+        state: directory
+        owner: "{{ USER }}"
+        group: "{{ USER }}"
+        mode: '0755'
+
+    - name: Download Powerlevel10k
+      become_user: "{{ USER }}"
+      git:
+        repo: https://github.com/romkatv/powerlevel10k.git
+        dest: "$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
+        depth: 1
 
     - name: Generate zshrc file and copy it
       become_user: "{{ USER }}"
