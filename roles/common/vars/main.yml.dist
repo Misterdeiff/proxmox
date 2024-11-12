@@ -11,6 +11,12 @@ DRIVES:
     MOUNT: /mnt/timemachine
     FS: ntfs
 
+SHARES:
+  - ADDRESS: TRUENAS_IP
+    PATH: /mnt/Media/4k
+    MOUNT: /mnt/4k
+    FS: nfs
+
 # General
 ansible_ssh_private_key_file: ~/.ssh/authorized_keys/
 STORAGE: "{{ DRIVES[0]['MOUNT'] }}"

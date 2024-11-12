@@ -1,36 +1,67 @@
-- name: Create mount point directories
+- name: Mount disks and shares
   become: true
-  file:
-    path: "{{ item.MOUNT }}"
-    state: directory
-    owner: root
-    group: root
-    mode: 0755
-  loop: "{{ DRIVES }}"
-  when: not (item.MOUNT is exists)
-  tags: mount-disk
+  block:
+    # Drives
+    - name: Create mount point directories
+      file:
+        path: "{{ item.MOUNT }}"
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+      loop: "{{ DRIVES }}"
+      when: item.MOUNT is defined
 
-- name: Append disks config to fstab
-  become: true
-  blockinfile:
-    path: /etc/fstab
-    block: |
-      {% for drive in DRIVES %}
-      UUID={{ drive.UUID }} {{ drive.MOUNT }} {{ drive.FS }} defaults 0 0
-      {% endfor %}
-    state: present
-    create: yes
-    insertafter: EOF
-  tags: mount-disk
+    - name: Append disks config to fstab
+      blockinfile:
+        path: /etc/fstab
+        block: |
+          {% for drive in DRIVES %}
+          UUID={{ drive.UUID }} {{ drive.MOUNT }} {{ drive.FS }} defaults 0 0
+          {% endfor %}
+        state: present
+        create: yes
+        insertafter: EOF
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - DRIVES"
 
-- name: Mount disks
-  become: true
-  command: mount -a
+    # Shares
+    - name: Create mount point directories for SHARES
+      file:
+        path: "{{ item.MOUNT }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop: "{{ SHARES }}"
+      when: item.MOUNT is defined
+
+    - name: Append share mounts to fstab
+      blockinfile:
+        path: /etc/fstab
+        block: |
+          {% for share in SHARES %}
+          {{ share.ADDRESS }}:{{ share.PATH }} {{ share.MOUNT }} {{ share.FS }} defaults 0 0
+          {% endfor %}
+        state: present
+        create: yes
+        insertafter: EOF
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - SHARES"
+      when: SHARES is defined and SHARES | length > 0
+
+    - name: Mount disks
+      command: mount -a
   tags: mount-disk
 
 - name: Create Media directory structure
   file:
     path: "{{ STORAGE }}/{{ item }}"
+    state: directory
+  loop: "{{ MEDIA_DIRECTORY_STRUCTURE }}"
+  tags: directory
+
+- name: Create 4K Media directory structure
+  file:
+    path: "{{ SHARES[0].MOUNT }}/{{ item }}"
     state: directory
   loop: "{{ MEDIA_DIRECTORY_STRUCTURE }}"
   tags: directory
