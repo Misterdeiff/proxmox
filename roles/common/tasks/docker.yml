@@ -20,6 +20,15 @@
   tags: docker, compose-restart, compose-start
 
 - name: Restart Docker Container
-  shell: sudo docker compose restart {{ container }}
+  become: true
+  block:
+    - name: Stop container
+      shell: docker compose stop {{ container }}
+      
+    - name: Remove container
+      shell: docker rm {{ container }}
+
+    - name: Start container
+      shell: docker compose up -d {{ container }}
   when: container is defined
   tags: container

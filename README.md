@@ -138,6 +138,15 @@ VPN access to your home network
 5. Once the tailscale container is up, access the [Tailscale dashboard > Machines](https://login.tailscale.com/admin/machines) > Options (in Tailscale machine) > Edit route settings > Check the shared subnet > Save
 6. DNS > Nameservers > Add nameserver > Enter the internal IP of your server (Pi-hole should be running)
 
+## UniFi
+Controller for Ubiquiti UniFi network devices. 
+
+The regular inform port is 8080, but since I used that one already, I changed it to 8081, this means you must ensure the controller overrides the default config of your devices. To do so, follow the next steps once you are in the controller:
+
+1. Go to Settings > System > Advanced
+2. Check `Inform Host` Override checkbox
+3. Add the local IP or DNS of the server running the Docker container
+
 # Features
 These are additional features that you can find in the `environment.yml` file.
 - Custom aliases
