@@ -56,12 +56,20 @@
   file:
     path: "{{ STORAGE }}/{{ item }}"
     state: directory
+    mode: "2775"
   loop: "{{ MEDIA_DIRECTORY_STRUCTURE }}"
   tags: directory
 
 - name: Create 4K Media directory structure
   file:
-    path: "{{ SHARES[0].MOUNT }}/{{ item }}"
+    path: "{{ STORAGE_4K }}/{{ item }}"
     state: directory
-  loop: "{{ MEDIA_DIRECTORY_STRUCTURE }}"
-  tags: directory
+    owner: "{{ PUID }}"
+    group: "{{ PGID }}"
+    mode: "2775"
+  loop: "{{ MEDIA_DIRECTORY_STRUCTURE_4K }}"
+  tags: directory, directory4k
+
+- name: Ensure recursive permissions on /shared
+  command: "chown -R {{ PUID }}:{{ PUID }} {{ STORAGE }}/shared"
+  tags: permissions

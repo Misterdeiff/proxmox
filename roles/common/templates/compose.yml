@@ -43,6 +43,7 @@ services:
     volumes:
       - "{{ STORAGE }}/docker/Plex Media Server:/root/Library/Application Support/Plex Media Server"
       - "{{ STORAGE }}/shared/media:/shared/media"
+      - "{{ STORAGE_4K }}/shared4k/media:/shared4k/media"
 
   tautulli:
     image: lscr.io/linuxserver/tautulli:latest
@@ -76,7 +77,28 @@ services:
       - 51413:51413
       - 51413:51413/udp
     restart: unless-stopped
-    
+
+  qbittorrent4k:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent4k
+    networks:
+      - arr
+    environment:
+      - PUID={{ PUID }}
+      - PGID={{ PGID }}
+      - TZ={{ TIMEZONE }}
+      - UMASK_SET=022
+      - WEBUI_PORT=8383
+      - TORRENTING_PORT=6881
+    volumes:
+      - "{{ STORAGE }}/docker/qbittorrent4k:/config"
+      - "{{ STORAGE_4K }}/shared4k/torrents:/shared4k/torrents"
+    ports:
+      - 8383:8383
+      - 6881:6881
+      - 6881:6881/udp
+    restart: unless-stopped
+
   overseerr:
     image: lscr.io/linuxserver/overseerr:latest
     container_name: overseerr
@@ -109,6 +131,23 @@ services:
       - 7878:7878
     restart: unless-stopped
 
+  radarr4k:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr4k
+    networks:
+      - arr
+    environment:
+      - PUID={{ PUID }}
+      - PGID={{ PGID }}
+      - TZ={{ TIMEZONE }}
+      - UMASK_SET=022
+    volumes:
+      - "{{ STORAGE }}/docker/radarr4K:/config"
+      - "{{ STORAGE_4K }}/shared4k:/shared4k"
+    ports:
+      - 7979:7878
+    restart: unless-stopped
+
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
@@ -124,6 +163,23 @@ services:
       - "{{ STORAGE }}/shared:/shared"
     ports:
       - 8989:8989
+    restart: unless-stopped
+
+  sonarr4k:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr4k
+    networks:
+      - arr
+    environment:
+      - PUID={{ PUID }}
+      - PGID={{ PGID }}
+      - TZ={{ TIMEZONE }}
+      - UMASK_SET=022
+    volumes:
+      - "{{ STORAGE }}/docker/sonarr4K:/config"
+      - "{{ STORAGE_4K }}/shared4k:/shared4k"
+    ports:
+      - 8980:8989
     restart: unless-stopped
 
   prowlarr:
