@@ -7,6 +7,8 @@ It has been built using Ansible to create every single requirement. So, in case 
 
 I included some interesting container notes to take into account when configuring them.
 
+# Notes
+1. There are two methods to mount your drive/s destinated to store media for ARR containers: Mount it [directly in the Docker server](https://trash-guides.info/File-and-Folder-Structure/How-to-set-up/Docker/) or mount it using [TrueNAS and a NFS share](https://trash-guides.info/File-and-Folder-Structure/How-to-set-up/TrueNAS-Core/). I originally used the first method, but then I switched to TrueNAS to easyly handle ZFS and for better visualitation. If you choose the first method you can disregard all references to TrueNAS in this project.
 
 # My setup
 Hardware: [Beelink SEi12](https://www.bee-link.com/products/beelink-sei12-i5-12450h) (check the specs in the link). 
@@ -42,36 +44,36 @@ Before starting the `Setup procedure` you will need the next:
 11. Adjust `inventories/hosts` as needed.
 12. Run all tasks in the playbook:
    ```shell
-   ansible-playbook -i inventories/hosts -K playbook.yml
+   ansible-playbook -i inventories/hosts playbook.yml
    ```
 
 # Useful commands
 
 ## Get a List of Playbook Tasks
 ``` shell
-ansible-playbook -i inventories/hosts -K playbook.yml --list-tasks
+ansible-playbook -i inventories/hosts playbook.yml --list-tasks
 ```
 
 ## Run all Tasks in Playbook
 ```shell
-ansible-playbook -i inventories/hosts -K playbook.yml
+ansible-playbook -i inventories/hosts playbook.yml
 ```
 
 ## Test changes
 Use --check for a dry run and, in addition, use --diff to have a detail differences
 
 ```shell
-ansible-playbook -i inventories/hosts -K playbook.yml -t docker --check --diff
+ansible-playbook -i inventories/hosts playbook.yml -t docker --check --diff
 ```
 
 ## Run task with a Specific Tag - Example: Docker installation
 ```shell
-ansible-playbook -i inventories/hosts -K playbook.yml -t docker
+ansible-playbook -i inventories/hosts playbook.yml -t docker
 ```
 
 ## Copy compose.yml and restart only the specified container
 ```shell
-ansible-playbook -i inventories/hosts -K playbook.yml -t container -e "container=samba"
+ansible-playbook -i inventories/hosts playbook.yml -t container -e "container=samba"
 ```
 # Tools
 ## Telegram
@@ -87,7 +89,11 @@ In order to create your own bot follow the next steps:
 
 Note: `telegram_notification_disk.sh` uses an optional variable `EXCLUDE_DISK` to exclude from the notifications the Time Machine disk. This is because Time Machine tends to use the whole disk space before removing old backups.
 
-# Container Notes
+# Sever Notes
+## TrueNAS
+1. Once connected the USB to the virtual machine in Proxmox, create a Pool
+2. Follow the steps [here](https://trash-guides.info/File-and-Folder-Structure/How-to-set-up/TrueNAS-Core/) to ensure Hardlinks and atomic moves work properly
+
 ## Plex
 1. Go to http://YOUR_IP:32400/web/index.html
 2. Configure your folders

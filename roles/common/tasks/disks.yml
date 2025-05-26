@@ -1,36 +1,61 @@
-- name: Create mount point directories
+- name: Mount disks and shares
   become: true
-  file:
-    path: "{{ item.MOUNT }}"
-    state: directory
-    owner: root
-    group: root
-    mode: 0755
-  loop: "{{ DRIVES }}"
-  when: not (item.MOUNT is exists)
-  tags: mount-disk
+  block:
+    - name: Create mount point directories
+      file:
+        path: "{{ item.MOUNT }}"
+        state: directory
+        owner: "{{ USER }}"
+        group: "{{ USER }}"
+        mode: 0755
+      loop: "{{ DRIVES + SHARES }}"
+      when: item.MOUNT is defined
 
-- name: Append disks config to fstab
-  become: true
-  blockinfile:
-    path: /etc/fstab
-    block: |
-      {% for drive in DRIVES %}
-      UUID={{ drive.UUID }} {{ drive.MOUNT }} {{ drive.FS }} defaults 0 0
-      {% endfor %}
-    state: present
-    create: yes
-    insertafter: EOF
-  tags: mount-disk
+    - name: Append disks and shares config to fstab
+      blockinfile:
+        path: /etc/fstab
+        block: |
+          {% for drive in DRIVES %}
+          UUID={{ drive.UUID }} {{ drive.MOUNT }} {{ drive.FS }} defaults 0 0
+          {% endfor %}
+          {% for share in SHARES %}
+          {{ share.ADDRESS }}:{{ share.PATH }} {{ share.MOUNT }} {{ share.FS }} defaults 0 0
+          {% endfor %}
+        state: present
+        create: yes
+        insertafter: EOF
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - STORAGE"
+      when: (DRIVES is defined and DRIVES | length > 0) or (SHARES is defined and SHARES | length > 0)
 
-- name: Mount disks
-  become: true
-  command: mount -a
+    - name: Mount disks
+      command: mount -a
   tags: mount-disk
 
 - name: Create Media directory structure
-  file:
-    path: "{{ STORAGE }}/{{ item }}"
-    state: directory
-  loop: "{{ MEDIA_DIRECTORY_STRUCTURE }}"
+  block:
+    - name: Create top-level media directories
+      file:
+        path: "{{ NEW_STORAGE }}/{{ item }}"
+        owner: "{{ USER }}"
+        group: "{{ USER }}"
+        mode: 0755
+        state: directory
+      loop: "{{ MEDIA_DIRECTORY_STRUCTURE }}"
+
+    - name: Find all files and directories under media structure
+      find:
+        paths: "{{ NEW_STORAGE }}/{{ item }}"
+        recurse: yes
+        file_type: any
+      loop: "{{ MEDIA_DIRECTORY_STRUCTURE }}"
+      register: media_paths
+
+    - name: Set correct permissions for all media content
+      file:
+        path: "{{ item.path }}"
+        owner: "{{ USER }}"
+        group: "{{ USER }}"
+        mode: "{{ '0755' if item.isdir else '0644' }}"
+      loop: "{{ media_paths.results | map(attribute='files') | flatten }}"
+      when: media_paths.results | map(attribute='files') | flatten | length > 0
   tags: directory

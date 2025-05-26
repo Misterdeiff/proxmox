@@ -1,7 +1,7 @@
 - name: Append a line to docker file to store temps in disk
   lineinfile:
     path: /etc/default/docker
-    line: export DOCKER_TMPDIR="{{ STORAGE }}/tmp/docker"
+    line: export DOCKER_TMPDIR="/tmp/docker"
     insertafter: EOF
   tags: docker
 
@@ -20,7 +20,6 @@
   tags: docker, compose-restart, compose-start
 
 - name: Restart Docker Container
-  become: true
   block:
     - name: Stop container
       shell: docker compose stop {{ container }}

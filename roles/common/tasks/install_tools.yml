@@ -62,6 +62,10 @@
     - name: Update apt package index again (with Docker repo)
       apt:
         update_cache: yes
+        
+    - name: Add my user to Docker
+      command: "sudo usermod -a -G docker {{ USER }}"
+
   tags: docker
 
 - name: Install Docker and related packages
