@@ -9,7 +9,6 @@ services:
       -s "{{ user.USER }};/{{ user.USER }};yes;no"
       {% endfor -%}
       -s "media;/media;yes;no"
-      -s "torrents;/torrents;yes;no"
       -s "backup;/backup;yes;no"
       -s "timemachine;/timemachine;yes;no"
     stdin_open: true
@@ -21,7 +20,6 @@ services:
       - 445:445
     volumes:
       - "{{ STORAGE }}/shared/media:/media"
-      - "{{ STORAGE }}/shared/torrents:/torrents"
       - "{{ BACKUP }}:/backup"
       - "{{ TIMEMACHINE }}:/timemachine"
       {% for user in SAMBA -%}
@@ -29,7 +27,7 @@ services:
       {% endfor %}
 
   plex:
-    image: jaymoulin/plex:latest
+    image: lscr.io/linuxserver/plex:latest
     container_name: plex
     hostname: plex
     restart: unless-stopped
@@ -40,9 +38,10 @@ services:
       - VERSION=docker
       - TZ={{ TIMEZONE }} 
       - PLEX_CLAIM={{ PLEX_CLAIM }}
+      - UMASK=022
     volumes:
-      - "{{ STORAGE }}/docker/Plex Media Server:/root/Library/Application Support/Plex Media Server"
-      - "{{ STORAGE }}/shared/media:/shared/media"
+      - "{{ DOCKER_CONFIG }}/plex:/config"
+      - "{{ NEW_STORAGE }}/media:/data/media"
 
   tautulli:
     image: lscr.io/linuxserver/tautulli:latest
@@ -53,14 +52,14 @@ services:
       - TZ={{ TIMEZONE }}
       - UMASK_SET=022
     volumes:
-      - "{{ STORAGE }}/docker/tautulli:/config"
+      - "{{ DOCKER_CONFIG }}/tautulli:/config"
     ports:
       - 8181:8181
     restart: unless-stopped
-
-  transmission:
-    image: lscr.io/linuxserver/transmission:latest
-    container_name: transmission
+    
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
     networks:
       - arr
     environment:
@@ -68,15 +67,17 @@ services:
       - PGID={{ PGID }}
       - TZ={{ TIMEZONE }}
       - UMASK_SET=022
+      - WEBUI_PORT=8083
+      - TORRENTING_PORT=6881
     volumes:
-      - "{{ STORAGE }}/docker/transmission:/config"
-      - "{{ STORAGE }}/shared/torrents:/shared/torrents"
+      - "{{ DOCKER_CONFIG }}/qbittorrent/appdata:/config"
+      - "{{ NEW_STORAGE }}/torrents:/data/torrents"
     ports:
-      - 9091:9091
-      - 51413:51413
-      - 51413:51413/udp
+      - 8083:8083
+      - 6881:6881
+      - 6881:6881/udp
     restart: unless-stopped
-    
+
   overseerr:
     image: lscr.io/linuxserver/overseerr:latest
     container_name: overseerr
@@ -87,7 +88,7 @@ services:
       - PGID={{ PGID }}
       - TZ={{ TIMEZONE }}
     volumes:
-      - "{{ STORAGE }}/docker/overseerr:/config"
+      - "{{ DOCKER_CONFIG }}/overseerr:/config"
     ports:
       - 5055:5055
     restart: unless-stopped
@@ -103,8 +104,8 @@ services:
       - TZ={{ TIMEZONE }}
       - UMASK_SET=022
     volumes:
-      - "{{ STORAGE }}/docker/radarr:/config"
-      - "{{ STORAGE }}/shared:/shared"
+      - "{{ DOCKER_CONFIG }}/radarr:/config"
+      - "{{ NEW_STORAGE }}:/data"
     ports:
       - 7878:7878
     restart: unless-stopped
@@ -120,8 +121,8 @@ services:
       - TZ={{ TIMEZONE }}
       - UMASK_SET=022
     volumes:
-      - "{{ STORAGE }}/docker/sonarr:/config"
-      - "{{ STORAGE }}/shared:/shared"
+      - "{{ DOCKER_CONFIG }}/sonarr:/config"
+      - "{{ NEW_STORAGE }}:/data"
     ports:
       - 8989:8989
     restart: unless-stopped
@@ -136,7 +137,7 @@ services:
       - PGID={{ PGID }}
       - TZ={{ TIMEZONE }}
     volumes:
-      - "{{ STORAGE }}/docker/prowlarr:/config"
+      - "{{ DOCKER_CONFIG }}/prowlarr:/config"
     ports:
       - 9696:9696
     restart: unless-stopped
@@ -169,8 +170,8 @@ services:
       - DNSMASQ_LISTENING=all
       - WEBTHEME=default-dark
     volumes:
-      - '{{ STORAGE }}/docker/pihole/etc-pihole/:/etc/pihole/'
-      - '{{ STORAGE }}/docker/pihole/etc-dnsmasq.d/:/etc/dnsmasq.d/'
+      - '{{ DOCKER_CONFIG }}/pihole/etc-pihole/:/etc/pihole/'
+      - '{{ DOCKER_CONFIG }}/pihole/etc-dnsmasq.d/:/etc/dnsmasq.d/'
     cap_add:
       - NET_ADMIN
     restart: unless-stopped
@@ -215,10 +216,10 @@ services:
       - USER={{ CONTAINER_USER }}
       - KOPIA_PASSWORD={{ KOPIA_REPO_PASS }}
     volumes:
-      - "{{ STORAGE }}/docker/kopia/config:/app/config"
-      - "{{ STORAGE }}/docker/kopia/cache:/app/cache"
-      - "{{ STORAGE }}/docker/kopia/logs:/app/logs"
-      - "{{ STORAGE }}/docker:/data/docker:ro"
+      - "{{ DOCKER_CONFIG }}/kopia/config:/app/config"
+      - "{{ DOCKER_CONFIG }}/kopia/cache:/app/cache"
+      - "{{ DOCKER_CONFIG }}/kopia/logs:/app/logs"
+      - "{{ DOCKER_CONFIG }}:/data/docker:ro"
       - "{{ STORAGE }}/files:/data/files:ro"
       - "{{ BACKUP }}/kopia:/backups:shared"
       - "{{ USER_PATH }}/scripts:/scripts:ro"
@@ -235,8 +236,8 @@ services:
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_EXTRA_ARGS=--advertise-tags=tag:container --advertise-routes={{ LOCAL_SUBNET }}
     volumes:
-      - "{{ STORAGE }}/docker/tailscale/state:/var/lib/tailscale"
-      - "{{ STORAGE }}/docker/tailscale/config:/config"
+      - "{{ DOCKER_CONFIG }}/tailscale/state:/var/lib/tailscale"
+      - "{{ DOCKER_CONFIG }}/tailscale/config:/config"
       - /dev/net/tun:/dev/net/tun
     cap_add:
       - net_admin
@@ -253,7 +254,7 @@ services:
       - UMASK_SET=022
       - UNIFI_HTTP_PORT=8081
     volumes:
-      - "{{ STORAGE }}/docker/unifi/config:/config"
+      - "{{ DOCKER_CONFIG }}/unifi/config:/unifi"
     ports:
       - 8443:8443
       - 3478:3478/udp
