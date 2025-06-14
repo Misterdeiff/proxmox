@@ -7,6 +7,24 @@ It has been built using Ansible to create every single requirement. So, in case 
 
 I included some interesting container notes to take into account when configuring them.
 
+# Containers
+Here a summary of what's in this repository
+
+- [Plex](https://hub.docker.com/r/linuxserver/plex): Media organizer and player
+- [Tautilli](https://docs.linuxserver.io/images/docker-tautulli/): Plex monitoring & analytics
+- [qBittorrent](https://docs.linuxserver.io/images/docker-qbittorrent/): Torrent manager
+- [Overseerr](https://docs.linuxserver.io/images/docker-overseerr/): Media request manager and discovery
+- [Radarr](https://docs.linuxserver.io/images/docker-radarr/): Movies manager (Usenet and Bittorrent)
+- [Sonarr](https://docs.linuxserver.io/images/docker-sonarr/): TV Shows manager (Usenet and Bittorrent)
+- [Prowlarr](https://docs.linuxserver.io/images/docker-prowlarr/): Indexer manager
+- [Flaresolverr](https://github.com/FlareSolverr/FlareSolverr): Bypass Cloudflare and DDoS-GUARD protection
+- [Samba](https://hub.docker.com/r/dperson/samba): Share directories
+- [PiHole](https://docs.pi-hole.net/docker/): DNS & Ad-Blocker
+- [Watchtower](https://github.com/containrrr/watchtower): Automatic Docker upgrades
+- [Kopia](https://kopia.io/): Backups
+- [Tailscale](https://tailscale.com/): Client VPN
+- [Netdata](https://www.netdata.cloud/): Monitoring & Alerting
+
 # Notes
 1. There are two methods to mount your drive/s destinated to store media for ARR containers: Mount it [directly in the Docker server](https://trash-guides.info/File-and-Folder-Structure/How-to-set-up/Docker/) or mount it using [TrueNAS and a NFS share](https://trash-guides.info/File-and-Folder-Structure/How-to-set-up/TrueNAS-Core/). I originally used the first method, but then I switched to TrueNAS to easyly handle ZFS and for better visualitation. If you choose the first method you can disregard all references to TrueNAS in this project.
 
