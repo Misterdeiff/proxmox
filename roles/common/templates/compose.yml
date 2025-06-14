@@ -1,31 +1,5 @@
 services:
-  samba:
-    image: dperson/samba
-    container_name: samba
-    restart: always
-    command: |
-      {% for user in SAMBA -%}
-      -u "{{ user.USER }};{{ user.PASS }}"
-      -s "{{ user.USER }};/{{ user.USER }};yes;no"
-      {% endfor -%}
-      -s "media;/media;yes;no"
-      -s "backup;/backup;yes;no"
-      -s "timemachine;/timemachine;yes;no"
-    stdin_open: true
-    tty: true
-    environment:
-      - TZ={{ TIMEZONE }}
-    ports:
-      - 139:139
-      - 445:445
-    volumes:
-      - "{{ STORAGE }}/shared/media:/media"
-      - "{{ BACKUP }}:/backup"
-      - "{{ TIMEMACHINE }}:/timemachine"
-      {% for user in SAMBA -%}
-      - {{ STORAGE }}/files/{{ user.USER }}:/{{ user.USER }}
-      {% endfor %}
-
+  
   plex:
     image: lscr.io/linuxserver/plex:latest
     container_name: plex
@@ -156,6 +130,33 @@ services:
       - "${PORT:-8191}:8191"
     restart: unless-stopped
   
+  samba:
+    image: dperson/samba
+    container_name: samba
+    restart: always
+    command: |
+      {% for user in SAMBA -%}
+      -u "{{ user.USER }};{{ user.PASS }}"
+      -s "{{ user.USER }};/{{ user.USER }};yes;no"
+      {% endfor -%}
+      -s "media;/media;yes;no"
+      -s "backup;/backup;yes;no"
+      -s "timemachine;/timemachine;yes;no"
+    stdin_open: true
+    tty: true
+    environment:
+      - TZ={{ TIMEZONE }}
+    ports:
+      - 139:139
+      - 445:445
+    volumes:
+      - "{{ STORAGE }}/shared/media:/media"
+      - "{{ BACKUP }}:/backup"
+      - "{{ TIMEMACHINE }}:/timemachine"
+      {% for user in SAMBA -%}
+      - {{ STORAGE }}/files/{{ user.USER }}:/{{ user.USER }}
+      {% endfor %}
+
   pihole:
     container_name: pihole
     image: pihole/pihole:latest
