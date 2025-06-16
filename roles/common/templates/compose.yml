@@ -1,5 +1,11 @@
+x-healthcheck-template: &default-healthcheck
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 5s
+    
 services:
-  
+    
   plex:
     image: lscr.io/linuxserver/plex:latest
     container_name: plex
@@ -16,6 +22,9 @@ services:
     volumes:
       - "{{ DOCKER_CONFIG }}/plex:/config"
       - "{{ NEW_STORAGE }}/media:/data/media"
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:32400/web/index.html"]
 
   tautulli:
     image: lscr.io/linuxserver/tautulli:latest
@@ -30,6 +39,9 @@ services:
     ports:
       - 8181:8181
     restart: unless-stopped
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8181/status"]
     
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
@@ -51,6 +63,9 @@ services:
       - 6881:6881
       - 6881:6881/udp
     restart: unless-stopped
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8083"]
 
   overseerr:
     image: lscr.io/linuxserver/overseerr:latest
@@ -66,6 +81,9 @@ services:
     ports:
       - 5055:5055
     restart: unless-stopped
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:5055/health"]
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -83,6 +101,9 @@ services:
     ports:
       - 7878:7878
     restart: unless-stopped
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:7878"]
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
@@ -100,6 +121,9 @@ services:
     ports:
       - 8989:8989
     restart: unless-stopped
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8989"]
 
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
@@ -115,6 +139,9 @@ services:
     ports:
       - 9696:9696
     restart: unless-stopped
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:9696"]
 
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
@@ -129,6 +156,9 @@ services:
     ports:
       - "${PORT:-8191}:8191"
     restart: unless-stopped
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8191"]
   
   samba:
     image: dperson/samba
@@ -225,6 +255,9 @@ services:
       - "{{ BACKUP }}/kopia:/backups:shared"
       - "{{ USER_PATH }}/scripts:/scripts:ro"
     restart: unless-stopped
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:51515 | grep -qE '401|403|200'"]
 
   tailscale:
     image: tailscale/tailscale:latest
@@ -244,6 +277,9 @@ services:
       - net_admin
       - sys_module
     restart: unless-stopped
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD", "tailscale", "status"]
 
   unifi:
     image: jacobalberty/unifi:latest
